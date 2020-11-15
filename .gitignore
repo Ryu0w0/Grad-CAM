@@ -1,0 +1,5 @@
+*.pyc
+.idea
+/files/input/dataset/*
+/files/output/*/*
+/ipynb/.ipynb_checkpoints
