@@ -8,8 +8,8 @@ from utils.seed import seed_everything
 
 class ImgTransform:
     def __init__(self, args, is_train):
-        self.cifar_10_mean = (0.4914, 0.4822, 0.4465)
-        self.cifar_10_std = (0.247, 0.243, 0.261)
+        self.img_mean = (0.485, 0.456, 0.406)
+        self.img_std = (0.229, 0.224, 0.225)
         self.transform = self.create_transform(args, is_train)
         self.cnt_seed = 0
 
@@ -24,16 +24,14 @@ class ImgTransform:
         """
         if is_train and args.use_aug == 1:
             transform = A.Compose([
-                trans.Normalize(mean=self.cifar_10_mean, std=self.cifar_10_std, max_pixel_value=1.0),
-                trans.HorizontalFlip(p=0.5),
-                trans.ShiftScaleRotate(shift_limit=0, scale_limit=0.25, rotate_limit=30, p=1),
-                trans.CoarseDropout(max_holes=1, min_holes=1, min_width=12, min_height=12,
-                                    max_height=12, max_width=12, p=0.5),
+                trans.Resize(299, 299),
+                trans.Normalize(mean=self.img_mean, std=self.img_std, max_pixel_value=1.0),
                 ToTensorV2()]
             )
         else:
             transform = A.Compose([
-                trans.Normalize(mean=self.cifar_10_mean, std=self.cifar_10_std, max_pixel_value=1.0),
+                trans.Resize(299, 299),
+                trans.Normalize(mean=self.img_mean, std=self.img_std, max_pixel_value=1.0),
                 ToTensorV2()]
             )
         return transform
@@ -43,8 +41,8 @@ class ImgTransform:
         denormalize pixel ranges of images. Shape of input should be (b, c, w, h).
         This function is supposed to be used for visualization.
         """
-        mean_ = torch.Tensor(self.cifar_10_mean).reshape((1, 3, 1, 1))
-        std_ = torch.Tensor(self.cifar_10_std).reshape((1, 3, 1, 1))
+        mean_ = torch.Tensor(self.img_mean).reshape((1, 3, 1, 1))
+        std_ = torch.Tensor(self.img_std).reshape((1, 3, 1, 1))
         denormalized = torch.mul(img_tensor, std_) + mean_
         return denormalized
 
