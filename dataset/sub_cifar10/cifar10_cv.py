@@ -3,12 +3,12 @@ import numpy as np
 from sklearn.model_selection import StratifiedKFold
 from dataset.abscifar10 import AbstractCIFAR10
 from utils.seed import seed_everything
-from utils.config import Config
+from config.config_cnn import ConfigCNN
 from typing import Optional
 
 
 class CIFAR10CV(AbstractCIFAR10):
-    def __init__(self, root: str, train: bool, download: bool, args: Config,
+    def __init__(self, root: str, train: bool, download: bool, args: ConfigCNN,
                  reg_map: dict, expand_map: Optional[dict] = None):
         """
         Sub-class of AbstractCIFAR10 used for cross-validation.

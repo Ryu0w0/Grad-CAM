@@ -1,12 +1,13 @@
 import torch
 from utils.logger import logger_
 from utils.global_var import TrainType
+from config.config_cnn import ConfigCNN
 from dataset.sub_cifar10.cifar10_cv import CIFAR10CV
 from models.cnn.cnn import CNN
 
 
 class AbsTrainer:
-    def __init__(self, cv_dataset, args, config, device):
+    def __init__(self, cv_dataset, args: ConfigCNN, config: dict, device: str):
         self.cv_dataset = cv_dataset
         self.args = args
         self.config = config
@@ -73,4 +74,6 @@ class AbsTrainer:
                     logger_.info("FINISH TRAINING BY EARLY STOPPING")
                     logger_.info("EARLY STOP INFO")
                     logger_.info(es)
+                    if self.args.is_save_model:
+                        model.save(f"./files/output/models/{self.args.save_key}")
                     break

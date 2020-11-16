@@ -7,16 +7,15 @@ def initialization():
     """
     Initializing arguments, logger, tensorboard recorder and json files.
     """
-    import argparse
     from torch.utils.tensorboard import SummaryWriter
     from utils import file_operator as f_op
     from utils import logger as log_util
     from utils import seed
-    from utils.config import Config
+    from config.config_cnn import ConfigCNN
     import environ
 
     # create config object from arguments
-    args = environ.to_config(Config)
+    args = environ.to_config(ConfigCNN)
 
     # create logger
     logger_ = log_util.create_logger("main", "./files/output/logs", args.save_key, args.log_level)

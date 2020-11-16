@@ -3,7 +3,7 @@ from utils import logger
 
 
 @environ.config()
-class Config:
+class ConfigCNN:
     # BASIC PARAMETERS
     save_key: str = environ.var(name="SAVE_KEY", converter=str, default="default",
                                 help="Used as a file name of dataset and log files")
@@ -32,3 +32,4 @@ class Config:
     num_workers: bool = environ.var(name="NUM_WORKERS", converter=int, default=1)
     save_img_per_epoch: bool = environ.var(name="SAVE_IMG_PER_EPOCH", converter=int, default=5,
                                            help="Save org and reconstructed images per specified epoch")
+    is_save_model: bool = environ.var(name="IS_SAVE_MODEL", converter=bool, default=True)
