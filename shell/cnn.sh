@@ -11,22 +11,22 @@
 module load $1
 
 # PARAMETERS
-SAVE_KEY=$3
-LOG_LEVEL="INFO"
-USE_GPU=1
-IS_REPRODUCIBLE=0
-IS_LOCAL=0
-DO_CV=0
-DO_TEST=1
+save_key="-SAVE_KEY $3"
+log_level="-LOG_LEVEL INFO"
+use_gpu="-USE_GPU 1"
+is_reproducible="-IS_REPRODUCIBLE 0"
+is_local="-IS_LOCAL 0"
+do_cv="-DO_CV 0"
+do_test="-DO_TEST 1"
 # MODEL
-MODEL_CONFIG_KEY=$2
+model_config_key="-MODEL_CONFIG_KEY $2"
 # TRAINING
-USE_AUG=1
-NUM_FOLDS=5
-NUM_EPOCH=400
-BATCH_SIZE=64
-NUM_WORKERS=1
-SAVE_IMG_PER_EPOCH=5
-IS_SAVE_MODEL=1
+use_aug="-USE_AUG 1"
+num_folds="-NUM_FOLDS 5"
+num_epoch="-NUM_EPOCH 400"
+batch_size="-BATCH_SIZE 64"
+num_workers="-NUM_WORKERS 1"
+save_img_per_epoch="-SAVE_IMG_PER_EPOCH 5"
+is_save_model="-IS_SAVE_MODEL 1"
 
-python3 ./cnn_main.py $SAVE_KEY $LOG_LEVEL $USE_GPU $IS_REPRODUCIBLE $IS_LOCAL $MODEL_CONFIG_KEY $USE_AUG $NUM_FOLDS $NUM_EPOCH $BATCH_SIZE $NUM_WORKERS $SAVE_IMG_PER_EPOCH $DO_CV $DO_TEST $IS_SAVE_MODEL
+python3 ./autoencoder_main.py $save_key $log_level $use_gpu $is_reproducible $is_local $model_config_key $use_aug $num_folds $num_epoch $batch_size $num_workers $save_img_per_epoch $do_cv $do_test $is_save_model
