@@ -1,5 +1,5 @@
 #! /bin/bash
-#SBATCH "--job-name=auto_en"
+#SBATCH "--job-name=grad_cam"
 #SBATCH --mail-type=ALL
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=8
@@ -29,4 +29,4 @@ num_workers="-NUM_WORKERS 1"
 save_img_per_epoch="-SAVE_IMG_PER_EPOCH 5"
 is_save_model="-IS_SAVE_MODEL 1"
 
-python3 ./autoencoder_main.py $save_key $log_level $use_gpu $is_reproducible $is_local $model_config_key $use_aug $num_folds $num_epoch $batch_size $num_workers $save_img_per_epoch $do_cv $do_test $is_save_model
+python3 ./cnn_main.py $save_key $log_level $use_gpu $is_reproducible $is_local $model_config_key $use_aug $num_folds $num_epoch $batch_size $num_workers $save_img_per_epoch $do_cv $do_test $is_save_model
