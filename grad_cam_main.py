@@ -70,7 +70,7 @@ def main():
     model_gc.load_pre_train_weights(progress=True)
     model_gp = copy.deepcopy(model_gc)
 
-    logger_.info("*** Prepare GradCAM and GuidedBackprop procedures ***")
+    logger_.info("*** Prepare GradCAM and Guided Backprop procedures ***")
     grad_cam = GradCAM(model=model_gc,
                        f_get_last_module=lambda model_: model_.Mixed_7c, device=device)
     guided_backprop = GuidedBackprop(model=model_gp, device=device)
@@ -81,14 +81,12 @@ def main():
         GuidedGradCAM.save_img(image, prefix_no=id)
 
         # calc and visualize heatmap of Grad-CAM
-        heatmap, pred_index, probs = grad_cam(image, cls_idx=args.target_cls_idx)
-        grad_cam.save_heatmap(image, heatmap, prefix_no=id)
+        heatmap, probs = grad_cam(image, cls_idx=args.target_cls_idx)
         # calc and visualize guided backprop
-        gp = guided_backprop(image, cls_idx=args.target_cls_idx)
-        guided_backprop.save_gb(gp, prefix_no=id)
+        gb = guided_backprop(image, cls_idx=args.target_cls_idx)
         # calc and visualize Guided Grad-CAM
-        ggc = GuidedGradCAM.calc_guided_grad_cam(heatmap, gp)
-        GuidedGradCAM.save_guided_grad_cam(ggc, prefix_no=id)
+        ggc = GuidedGradCAM.calc_guided_grad_cam(heatmap, gb)
+        GuidedGradCAM.save_all_output(image, heatmap, ggc, probs, args.target_cls_idx, id)
 
     exit(0)
 

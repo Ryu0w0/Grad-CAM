@@ -1,5 +1,6 @@
 from typing import Optional
 import cv2
+from matplotlib import pyplot as plt
 import numpy as np
 import torch
 from torch import nn
@@ -9,40 +10,11 @@ from dataset.img_transform import ImgTransform
 class GuidedGradCAM(nn.Module):
     @staticmethod
     def freeze_model(model):
-        model.eval()
         for p in model.parameters():
             p.requires_grad = False
 
-    @staticmethod
-    def convert_from_np_to_cv2(img_array: np.array) -> np.array:
-        """
-        Convert 3 things below;
-         - Channel from (C, W, H) to (W, H, C)
-         - Value range from [0, 1] to [0, 255]
-         - Order of colors from RGB to BGR
-
-         Input should be (C, W, H) ranged in [0, 1] as RGB/Gray scale
-        """
-        img_array = np.transpose(img_array, (1, 2, 0))
-        img_array = np.uint8(255 * img_array)
-        if img_array.shape[2] == 3:  # change color order if color image
-            img_array = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
-        return img_array
-
     @classmethod
-    def save_img(cls, img: torch.Tensor, prefix_no: Optional[int] = None):
-        """
-        Save image as jpeg.
-            img: torch.Tensor (B, C, W, H)
-            prefix_no: iter_no of data loader
-        """
-        prefix_no = f"{prefix_no}_" if prefix_no is not None else ""
-        img = ImgTransform.denormalize_(img)
-        img = cls.convert_from_np_to_cv2(img.detach().cpu().numpy()[0, :, :, :])
-        cv2.imwrite(f"./files/output/images/{prefix_no}img.jpg", img)
-
-    @classmethod
-    def gb_processing(cls, gb: np.array):
+    def adjust_backprop_values(cls, gb: np.array):
         """
         Retrieved from https://github.com/jacobgil/pytorch-grad-cam/blob/master/gradcam.py#L222
         gb: np.array of (C, W, H)
@@ -55,14 +27,48 @@ class GuidedGradCAM(nn.Module):
         return gb
 
     @classmethod
-    def save_guided_grad_cam(cls, ggc: np.array, prefix_no: Optional[int] = None):
+    def save_all_output(cls, img: torch.Tensor, heatmap: np.array, ggc: np.array, probs: np.array,
+                        target_cls_idx: int, prefix_no: Optional[int] = None):
         """
         ggc: np.array of (3, W, H)
         """
         prefix_no = f"{prefix_no}_" if prefix_no is not None else ""
-        ggc = cls.gb_processing(ggc)
-        ggc = cls.convert_from_np_to_cv2(ggc)
-        cv2.imwrite(f"./files/output/images/{prefix_no}ggc.jpg", ggc)
+        # Grad-CAM (heatmap)
+        img = ImgTransform.denormalize_(img)
+        img = img.detach().cpu().numpy()[0, :, :, :]
+        img = np.transpose(img, (1, 2, 0))
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        img = np.uint8(255 * img)
+
+        heatmap = np.transpose(heatmap, (1, 2, 0))
+        heatmap = np.uint8(255 * heatmap)
+        heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+        heatmap = cv2.addWeighted(heatmap, 0.5, img, 0.5, 0)
+        heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
+
+        # Guided Grad-CAM
+        ggc = cls.adjust_backprop_values(ggc)
+        ggc = np.transpose(ggc, (1, 2, 0))
+        ggc = np.uint8(255 * ggc)
+
+        # Probability
+        prob_gt = probs[0, target_cls_idx]
+        predicted_idx = np.argmax(probs, axis=1)[0]
+        prob_pred = np.max(probs, axis=1)[0]
+        is_tp = "TP" if predicted_idx == target_cls_idx else "FP"
+
+        # PLOT
+        fig = plt.figure(tight_layout=True, figsize=(16, 4))
+        ax1 = fig.add_subplot(141, title="Original image")
+        ax1.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        ax2 = fig.add_subplot(142, title="Heatmap")
+        ax2.imshow(heatmap)
+        ax3 = fig.add_subplot(143, title="Guided Grad-CAM")
+        ax3.imshow(ggc)
+        ax4 = fig.add_subplot(144, title=f"Probability ({is_tp}) ")
+        ax4.bar([0, 1], [prob_gt, prob_pred], tick_label=["GT", "Pred"])
+
+        plt.savefig(f"./files/output/images/{prefix_no}guided_crad_cam.png")
 
     @staticmethod
     def calc_guided_grad_cam(heatmap: np.array, guided_backprop: np.array) -> np.array:

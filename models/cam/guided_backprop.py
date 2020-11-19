@@ -1,5 +1,3 @@
-from typing import Optional
-import cv2
 import numpy as np
 import torch
 from torch import nn
@@ -16,15 +14,9 @@ class GuidedBackprop(GuidedGradCAM):
         self.device = device
 
     @staticmethod
-    def freeze_model(model):
-        for p in model.parameters():
-            p.requires_grad = False
-
-    @staticmethod
     def apply_hooks(model):
         def forward_hook(m, input, output):
             m.saved_fmap = output.detach()
-            print(f"output is saved: {output.shape}")
 
         def backward_hook(m, grad_in, grad_out):
             assert m.saved_fmap is not None, f"No fmap is saved while backprop in {module}"
@@ -35,13 +27,6 @@ class GuidedBackprop(GuidedGradCAM):
             if isinstance(module, nn.ReLU):
                 module.register_forward_hook(forward_hook)
                 module.register_backward_hook(backward_hook)
-
-    @classmethod
-    def save_gb(cls, gb: np.array, prefix_no: Optional[int] = None):
-        prefix_no = f"{prefix_no}_" if prefix_no is not None else ""
-        gb = cls.gb_processing(gb)
-        gb = cls.convert_from_np_to_cv2(gb)
-        cv2.imwrite(f"./files/output/images/{prefix_no}gb.jpg", gb)
 
     def __call__(self, img: torch.Tensor, cls_idx: int) -> np.array:
         img.requires_grad = True
