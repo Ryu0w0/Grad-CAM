@@ -1,21 +1,25 @@
+from typing import Optional
 import cv2
 import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.autograd import grad as torch_grad
-from models.cnn.inception import Inception3
+from dataset.img_transform import ImgTransform
+from models.cam.guided_grad_cam import GuidedGradCAM
 
 
-class GradCAM(nn.Module):
+class GradCAM(GuidedGradCAM):
     def __init__(self, model: nn.Module, f_get_last_module, device):
         """
         model: model producing outputs used for visualization
         """
         super().__init__()
         self.model = model
-        self.device = device
+        self.model.eval()
         self.f_get_last_module = f_get_last_module
+        self.device = device
+        # self.freeze_model(self.model)
         self.set_hook(model, f_get_last_module)
 
     def set_hook(self, model, f_get_last_module):
@@ -30,7 +34,23 @@ class GradCAM(nn.Module):
         _, predicted = torch.max(output, 1)
         return predicted.numpy(), probs.numpy()
 
-    def forward(self, img: torch.Tensor, cls_idx: int) -> (np.array, np.array, np.array):
+    @classmethod
+    def save_heatmap(cls, img: torch.Tensor, heatmap: np.array, prefix_no: Optional[int] = None):
+        """
+        Save heatmap as jpeg.
+
+        heatmap: np.array (W, H)
+        img: torch.Tensor (B, C, W, H)
+        """
+        prefix_no = f"{prefix_no}_" if prefix_no is not None else ""
+        img = ImgTransform.denormalize_(img)
+        img = cls.convert_from_np_to_cv2(img.detach().cpu().numpy()[0, :, :, :])
+        heatmap = cls.convert_from_np_to_cv2(heatmap)
+        heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+        heatmap = cv2.addWeighted(heatmap, 0.5, img, 0.5, 0)
+        cv2.imwrite(f"./files/output/images/{prefix_no}heatmap.jpg", heatmap)
+
+    def __call__(self, img: torch.Tensor, cls_idx: int) -> (np.array, np.array, np.array):
         """
         img: input image used for making prediction
         cls_idx: class index visualized to show which region is focused by a model given
@@ -54,13 +74,14 @@ class GradCAM(nn.Module):
         alpha = F.avg_pool2d(gradients, fmap_size)
 
         # create localization map
-        local_map = F.relu(torch.sum(feature_maps * alpha, dim=1, keepdim=True))
+        heatmap = F.relu(torch.sum(feature_maps * alpha, dim=1, keepdim=True))
+        heatmap = cv2.resize(heatmap[0, 0, :, :].detach().cpu().numpy(), (299, 299))
         # rescale to [0, 1]
-        local_map = (local_map - torch.min(local_map)) / (torch.max(local_map) - torch.min(local_map))
-        local_map = F.interpolate(local_map, (299, 299)).detach().cpu().numpy()
+        heatmap = (heatmap - np.min(heatmap)) / (np.max(heatmap) - np.min(heatmap))
+        heatmap = np.expand_dims(heatmap, axis=0)
 
         # get predicted class
         preds, probs = self.__calc_pred_idx(output)
 
-        return local_map, preds, probs
+        return heatmap, preds, probs
 

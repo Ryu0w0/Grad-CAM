@@ -1,6 +1,7 @@
 """
 It is retrieved from https://github.com/takurooo/Python-ImageNet_Downloader
 """
+from utils.logger import logger_
 
 #-------------------------------------------
 # import
@@ -161,14 +162,17 @@ class ImageNet(object):
         """
         指定したwnidに属する画像をimgフォルダに保存
         """
-        self._check_wnid(wnid)
-        list_path = os.path.join(self.list_dir, wnid+'.txt')
-        if not os.path.exists(list_path):
-            self._download_imglist(self.list_dir, wnid)
+        if os.path.exists(f"./{self.img_dir}/{img_dir_name}"):
+            logger_.info(f"Download no files. {self.img_dir}/{img_dir_name} already exists.")
+        else:
+            self._check_wnid(wnid)
+            list_path = os.path.join(self.list_dir, wnid+'.txt')
+            if not os.path.exists(list_path):
+                self._download_imglist(self.list_dir, wnid)
 
-        imginfo = self._make_imginfo(list_path)
+            imginfo = self._make_imginfo(list_path)
 
-        img_dir = os.path.join(self.img_dir, img_dir_name)
-        os.makedirs(img_dir, exist_ok=True)
+            img_dir = os.path.join(self.img_dir, img_dir_name)
+            os.makedirs(img_dir, exist_ok=True)
 
-        self._download_imgs(img_dir, imginfo, limit, verbose)
+            self._download_imgs(img_dir, imginfo, limit, verbose)

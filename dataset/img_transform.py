@@ -37,12 +37,16 @@ class ImgTransform:
         return transform
 
     def denormalize(self, img_tensor):
+        return self.denormalize_(img_tensor, self.img_mean, self.img_std)
+
+    @staticmethod
+    def denormalize_(img_tensor, img_mean=(0.485, 0.456, 0.406), img_std=(0.229, 0.224, 0.225)):
         """
         denormalize pixel ranges of images. Shape of input should be (b, c, w, h).
         This function is supposed to be used for visualization.
         """
-        mean_ = torch.Tensor(self.img_mean).reshape((1, 3, 1, 1))
-        std_ = torch.Tensor(self.img_std).reshape((1, 3, 1, 1))
+        mean_ = torch.Tensor(img_mean).reshape((1, 3, 1, 1))
+        std_ = torch.Tensor(img_std).reshape((1, 3, 1, 1))
         denormalized = torch.mul(img_tensor, std_) + mean_
         return denormalized
 
