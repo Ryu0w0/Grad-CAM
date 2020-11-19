@@ -5,7 +5,6 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.autograd import grad as torch_grad
-from dataset.img_transform import ImgTransform
 from models.cam.guided_grad_cam import GuidedGradCAM
 
 
@@ -26,29 +25,6 @@ class GradCAM(GuidedGradCAM):
         def keep_output(self, _, output):
             self.output = output
         f_get_last_module(model).register_forward_hook(keep_output)
-
-    @staticmethod
-    def __calc_pred_idx(output: torch.Tensor) -> (np.array, np.array):
-        output = output.detach().cpu()
-        probs = F.softmax(output, dim=1)
-        _, predicted = torch.max(output, 1)
-        return predicted.numpy(), probs.numpy()
-
-    @classmethod
-    def save_heatmap(cls, img: torch.Tensor, heatmap: np.array, prefix_no: Optional[int] = None):
-        """
-        Save heatmap as jpeg.
-
-        heatmap: np.array (W, H)
-        img: torch.Tensor (B, C, W, H)
-        """
-        prefix_no = f"{prefix_no}_" if prefix_no is not None else ""
-        img = ImgTransform.denormalize_(img)
-        img = cls.convert_from_np_to_cv2(img.detach().cpu().numpy()[0, :, :, :])
-        heatmap = cls.convert_from_np_to_cv2(heatmap)
-        heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
-        heatmap = cv2.addWeighted(heatmap, 0.5, img, 0.5, 0)
-        cv2.imwrite(f"./files/output/images/{prefix_no}heatmap.jpg", heatmap)
 
     def __call__(self, img: torch.Tensor, cls_idx: int) -> (np.array, np.array, np.array):
         """
@@ -80,8 +56,7 @@ class GradCAM(GuidedGradCAM):
         heatmap = (heatmap - np.min(heatmap)) / (np.max(heatmap) - np.min(heatmap))
         heatmap = np.expand_dims(heatmap, axis=0)
 
-        # get predicted class
-        preds, probs = self.__calc_pred_idx(output)
+        probs = F.softmax(output.detach(), dim=1).cpu().numpy()
 
-        return heatmap, preds, probs
+        return heatmap, probs
 
