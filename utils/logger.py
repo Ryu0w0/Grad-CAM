@@ -4,7 +4,6 @@ from logging import getLogger, StreamHandler, Formatter, FileHandler
 from utils import file_operator as f_op
 
 logger_ = None
-writer_ = None
 
 
 def create_logger(logger_name, log_root_path, save_key, level=logging.INFO):

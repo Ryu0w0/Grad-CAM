@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Callable
 import cv2
 import numpy as np
 import torch
@@ -9,19 +9,22 @@ from models.cam.guided_grad_cam import GuidedGradCAM
 
 
 class GradCAM(GuidedGradCAM):
-    def __init__(self, model: nn.Module, f_get_last_module, device):
+    def __init__(self, model: nn.Module, f_get_last_module: Callable, device: str):
         """
-        model: model producing outputs used for visualization
+        Calculate Grad-CAM and produce heatmap.
+
+        Model: Any CNN as a classifier
+        f_get_last_module: Function receiving model and returning a module of the last conv layer.
         """
         super().__init__()
         self.model = model
         self.model.eval()
         self.f_get_last_module = f_get_last_module
+        self.set_forward_hook(model, f_get_last_module)
         self.device = device
-        # self.freeze_model(self.model)
-        self.set_hook(model, f_get_last_module)
 
-    def set_hook(self, model, f_get_last_module):
+    def set_forward_hook(self, model: nn.Module, f_get_last_module):
+        """ Register forward hook to store output of the last conv layer """
         def keep_output(self, _, output):
             self.output = output
         f_get_last_module(model).register_forward_hook(keep_output)
@@ -46,8 +49,7 @@ class GradCAM(GuidedGradCAM):
                                create_graph=False, retain_graph=True)[0]
 
         # calc sum per channel
-        fmap_size = feature_maps.shape[2]
-        alpha = F.avg_pool2d(gradients, fmap_size)
+        alpha = F.avg_pool2d(gradients, feature_maps.shape[2])
 
         # create localization map
         heatmap = F.relu(torch.sum(feature_maps * alpha, dim=1, keepdim=True))
@@ -55,7 +57,7 @@ class GradCAM(GuidedGradCAM):
         # rescale to [0, 1]
         heatmap = (heatmap - np.min(heatmap)) / (np.max(heatmap) - np.min(heatmap))
         heatmap = np.expand_dims(heatmap, axis=0)
-
+        # calc prob on outputs
         probs = F.softmax(output.detach(), dim=1).cpu().numpy()
 
         return heatmap, probs

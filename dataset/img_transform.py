@@ -3,7 +3,6 @@ import torch
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from albumentations.augmentations import transforms as trans
-from utils.seed import seed_everything
 
 
 class ImgTransform:
@@ -53,7 +52,6 @@ class ImgTransform:
     def __call__(self, img):
         img = np.asarray(img)
         img = img / 255  # convert value range into [0, 1] from [0, 255]
-        seed_everything(local_seed=self.cnt_seed)
         self.cnt_seed += 1
         img = self.transform(image=img)["image"]  # shape is also transformed from (w, h, c) to (c, w, h)
         return img

@@ -24,11 +24,6 @@ def initialization():
     logger_.info("*** ARGUMENTS ***")
     logger_.info(args)
 
-    # create TensorBoard writer
-    board_root_dir = f"./files/output/board/{args.save_key}"
-    f_op.create_folder(board_root_dir)
-    log_util.writer_ = SummaryWriter(board_root_dir)
-
     return args
 
 
@@ -66,20 +61,19 @@ def main():
     assert loader.batch_size == 1, f"batch size should be 1 but got {loader.batch_size}"
 
     logger_.info("*** LOAD CNN MODEL ***")
-    model_gc = Inception3(num_classes=1000, aux_logits=True)
+    model_gc = Inception3(num_classes=1000, aux_logits=True).to(device)
     model_gc.load_pre_train_weights(progress=True)
-    model_gp = copy.deepcopy(model_gc)
+    model_gp = copy.deepcopy(model_gc).to(device)
 
     logger_.info("*** Prepare GradCAM and Guided Backprop procedures ***")
     grad_cam = GradCAM(model=model_gc,
                        f_get_last_module=lambda model_: model_.Mixed_7c, device=device)
-    guided_backprop = GuidedBackprop(model=model_gp, device=device)
+    guided_backprop = GuidedBackprop(model=model_gp)
 
     logger_.info("*** VISUALIZATION ***")
     for id, batch in enumerate(loader):
+        logger_.info(f"[{id+1}/{len(loader)}] processing...")
         image, _ = batch
-        GuidedGradCAM.save_img(image, prefix_no=id)
-
         # calc and visualize heatmap of Grad-CAM
         heatmap, probs = grad_cam(image, cls_idx=args.target_cls_idx)
         # calc and visualize guided backprop

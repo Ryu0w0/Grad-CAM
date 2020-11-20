@@ -8,8 +8,12 @@ from dataset.img_transform import ImgTransform
 
 
 class GuidedGradCAM(nn.Module):
+    """
+    Compute and visualize Guided Grad-CAM based on Grad-CAM and Guided backpropagation.
+    """
     @staticmethod
     def freeze_model(model):
+        # Unused
         for p in model.parameters():
             p.requires_grad = False
 
@@ -30,9 +34,11 @@ class GuidedGradCAM(nn.Module):
     def save_all_output(cls, img: torch.Tensor, heatmap: np.array, ggc: np.array, probs: np.array,
                         target_cls_idx: int, prefix_no: Optional[int] = None):
         """
-        ggc: np.array of (3, W, H)
+        Save image of 4 subplots consisted of original image, heatmap, Guided Grad-CAM and
+        probability on GT label and predicted label.
         """
         prefix_no = f"{prefix_no}_" if prefix_no is not None else ""
+
         # Grad-CAM (heatmap)
         img = ImgTransform.denormalize_(img)
         img = img.detach().cpu().numpy()[0, :, :, :]

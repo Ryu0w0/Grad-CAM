@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.jit.annotations import Optional
 from torch import Tensor
-from utils.seed import seed_everything
 from utils.logger import logger_
 import torch.hub
 
@@ -31,6 +30,7 @@ _InceptionOutputs = InceptionOutputs
 
 
 class Inception3(nn.Module):
+    """ This model is customized such that ReLU layer is modified from function to nn.Module """
     r"""Inception v3 model architecture from
     `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
 
@@ -88,12 +88,9 @@ class Inception3(nn.Module):
             for idx, m in enumerate(self.modules()):
                 if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
                     stddev = m.stddev if hasattr(m, 'stddev') else 0.1
-                    seed_everything(local_seed=idx)
                     self.truncated_normal_(m.weight.data, 0.0, stddev)
                 elif isinstance(m, nn.BatchNorm2d):
-                    seed_everything(local_seed=idx)
                     nn.init.constant_(m.weight, 1)
-                    seed_everything(local_seed=idx)
                     nn.init.constant_(m.bias, 0)
 
         self._freeze_layers(freeze_until=freeze_until)
@@ -115,9 +112,6 @@ class Inception3(nn.Module):
         pretrained_dict = torch.hub.load_state_dict_from_url(model_urls['inception_v3_google'],
                                                              progress=progress)
         self.load_state_dict(pretrained_dict)
-
-    def load_1st_tl_weights(self, load_path, device):
-        self.load_state_dict(torch.load(f"{load_path}/test.ptn", map_location=device)["model_state_dict"])
 
     def _freeze_layers(self, freeze_until):
         """
