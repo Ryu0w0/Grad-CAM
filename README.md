@@ -1,12 +1,16 @@
 # Grad-CAM
-PyTorch implementation of Grad-CAM proposed by [1]. 
+PyTorch implementation of Guided Grad-CAM proposed by [1]. 
+
+Guided Grad-CAM visualizes where a model looks at to make prediction of a certain class as below;
+
+<img src="https://github.com/Ryu0w0/meta_repository/blob/master/Grad-CAM/images/guided_crad_cam.png" width=80%>
+
 
 
 Scripts perform;
 - Downloading specific class of images from ImageNet
 - Computing Grad-CAM, Guided backpropagation and Guided Grad-CAM
 - Visualizing these outcomes with probability of GT-class and predicted class to show how a model is confident to the prediction
-    - The visualization format is inspired from [here](https://blog.brainpad.co.jp/entry/2017/07/10/163000)
     
 Default settings are;
 - Using InceptionV3
